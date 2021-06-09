@@ -17,45 +17,27 @@ namespace SelfImprovement
     public partial class MainView : Form
     {
         #region Properties
-        public bool WorkOutComplete;
+        Models.Task WorkOut;
 
-        public bool StudyComplete;
+        Models.Task Study;
         #endregion Properties
 
         public MainView()
         {
             InitializeComponent();
+            this.WorkOut = new Models.Task("Work Out", this.WorkOutBtn, this.label4);
+            this.Study = new Models.Task("Study", this.StudyBtn, this.label5);
         }
 
         #region EventHandlers
         private void WorkOutBtn_Click(object sender, EventArgs e)
         {
-            if (!this.WorkOutComplete)
-            {
-                this.WorkOutComplete = true;
-                this.WorkOutBtn.BackColor = Color.Green;
-                this.IncrementConsecutiveDaysWorkingOut();
-                Console.WriteLine("Congratulations, you bettered yourself with time spent working out today!");
-            }
-            else
-            {
-                Console.WriteLine("A work out was already completed today, but an extra one doesn't hurt!");
-            }
+            this.WorkOut.CompleteTask();
         }
 
         private void StudyBtn_Click(object sender, EventArgs e)
         {
-            if (!this.StudyComplete)
-            {
-                this.StudyComplete = true;
-                this.StudyBtn.BackColor = Color.Green;
-                this.IncrementConsecutiveDaysStudying();
-                Console.WriteLine("Congratulations, you bettered yourself with time spend studying your craft today!");
-            }
-            else
-            {
-                Console.WriteLine("A study sesh was already completed today, but an extra one doesn't hurt!");
-            }
+            this.Study.CompleteTask();
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -65,13 +47,13 @@ namespace SelfImprovement
             if (timeLeftInDay.Equals("24:00"))
             {
                 // Reset the completed tasks when time left in day is 24 hours, if both are flase don't bother checking TimeLeftInDay
-                if (this.WorkOutComplete == true)
+                if (this.WorkOut.TaskComplete == true)
                 {
-                    this.ResetWorkOut();
+                    this.WorkOut.ResetTask();
                 }
-                if (this.StudyComplete == true)
+                if (this.Study.TaskComplete == true)
                 {
-                    this.ResetStudying();
+                    this.Study.ResetTask();
                 }                
             }
 
@@ -81,88 +63,12 @@ namespace SelfImprovement
         private void MainView_Load(object sender, EventArgs e)
         {
             this.SetTimeLeftInDay(this.GetTimeLeftInDay()); // Set time left in the day, needs to be updated to a countdown
-            this.WorkOutComplete = false;
-            this.StudyComplete = false;
-            this.GetConsecutiveDaysWorkingOutBaseline();
-            this.GetConsecutiveDaysStudyingBaseline();
+            this.WorkOut.TaskComplete = false;
+            this.Study.TaskComplete = false;
         }
         #endregion EventHandlers
 
         #region Helper Functions
-        #region Consecutive Workout Functions
-        private void ResetWorkOut()
-        {
-            this.WorkOutComplete = false;
-            this.WorkOutBtn.BackColor = Color.Red;
-            
-            Console.WriteLine("It's a new day, resetting work out task!");
-            MessageBox.Show("It's a new day, resetting work out task!");
-        }
-
-        private void GetConsecutiveDaysWorkingOutBaseline()
-        {
-            this.label4.Text = string.Format("Consecutive days working out: {0}", this.GetConsecutiveDaysWorkingOut());
-        }
-
-        private int GetConsecutiveDaysWorkingOut()
-        {
-            var consWorkOuts = ConfigurationManager.AppSettings.Get("ConsecutiveDaysWorkingOut");
-            return Int32.Parse(consWorkOuts);
-        }
-
-        private void IncrementConsecutiveDaysWorkingOut()
-        {
-            var consWorkOuts = GetConsecutiveDaysWorkingOut();
-            consWorkOuts++;
-
-            // Update the value in the config.. not a great place/way to store but works for now
-            Console.WriteLine("Incremented ConsecutiveDaysWorkingOut to {0}. Updating app.config value.", consWorkOuts);
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings["ConsecutiveDaysWorkingOut"].Value = consWorkOuts.ToString();
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
-
-            this.label4.Text = string.Format("Consecutive days working out: {0}", consWorkOuts);
-        }
-        #endregion Consecutive Workout Functions
-
-        #region Consecutive Studying Functions
-        private void ResetStudying()
-        {
-            this.StudyComplete = false;
-            this.StudyBtn.BackColor = Color.Red;
-
-            Console.WriteLine("It's a new day, resetting study task!");
-            MessageBox.Show("It's a new day, resetting study task!");
-        }
-
-        private void GetConsecutiveDaysStudyingBaseline()
-        {
-            this.label5.Text = string.Format("Consecutive days studying: {0}", this.GetConsecutiveDaysStudying());
-        }
-
-        private int GetConsecutiveDaysStudying()
-        {
-            var consStudy = ConfigurationManager.AppSettings.Get("ConsecutiveDaysStudying");
-            return Int32.Parse(consStudy);
-        }
-
-        private void IncrementConsecutiveDaysStudying()
-        {
-            var consStudy = GetConsecutiveDaysStudying();
-            consStudy++;
-
-            // Update the value in the config.. not a great place/way to store but works for now
-            Console.WriteLine("Incremented ConsecutiveDaysStudying to {0}. Updating app.config value.", consStudy);
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings["ConsecutiveDaysStudying"].Value = consStudy.ToString();
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
-
-            this.label5.Text = string.Format("Consecutive days studying: {0}", consStudy);
-        }
-        #endregion Consecutive Studying Functions
-
         #region Time Left in Day Functions
         private string GetTimeLeftInDay()
         {
