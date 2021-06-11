@@ -30,6 +30,12 @@ namespace SelfImprovement
         }
 
         #region EventHandlers
+        private void AddToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Views.NewTaskForm tskForm = new Views.NewTaskForm();
+            tskForm.Show();
+        }
+
         private void WorkOutBtn_Click(object sender, EventArgs e)
         {
             this.WorkOut.CompleteTask();
@@ -69,6 +75,36 @@ namespace SelfImprovement
         #endregion EventHandlers
 
         #region Helper Functions
+        public static void CreateNewTask(string task, object sender, EventArgs e)
+        {
+            // create new button
+            Button newButton = new Button();
+            newButton.BackColor = System.Drawing.Color.Red;
+            newButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            newButton.Location = new System.Drawing.Point(300, 275);
+            newButton.Name = task + "Btn";
+            newButton.Size = new System.Drawing.Size(209, 48);
+            newButton.TabIndex = 4;
+            newButton.TabStop = false;
+            newButton.Text = task;
+            newButton.UseVisualStyleBackColor = false;
+            //newButton.Click += new System.EventHandler(this.StudyBtn_Click); // TODO - how do I dynamically create an event handler??
+            Controls.Add(newButton);
+
+            // create new label
+            Label newLabel = new Label();
+            newLabel.AutoSize = true;
+            newLabel.Location = new System.Drawing.Point(306, 345);
+            newLabel.Name = task + "label";
+            newLabel.Size = new System.Drawing.Size(145, 13);
+            newLabel.TabIndex = 7;
+            newLabel.Text = string.Format("Consecutive days {0}: 0", task);
+
+            this.Controls.Add(newLabel);
+
+            Models.Task newTask = new Models.Task(task, newButton, newLabel);
+        }
+
         #region Time Left in Day Functions
         private string GetTimeLeftInDay()
         {
@@ -97,6 +133,7 @@ namespace SelfImprovement
             this.label2.Text = string.Format("Time left in the day: {0}", timeLeft);
         }
         #endregion Time Left in Day Functions
+
         #endregion Helper Functions
     }
 }
