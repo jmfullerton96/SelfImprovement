@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" auto-import="true" assembly="SelfImprovement" namespace="SelfImprovement.Models">
+  <class name="Task" table=" Tasks " dynamic-update="true" >
+    <cache usage="read-write"/>
+    <id name="Name" column="Name" type="varchar">
+      <generator class="native" />
+    </id>
+    <property name="TaskComplete" />
+    <property name="TaskButton" />
+    <property name="TaskLabel" />
+    <property name="ConsecutiveDays" />
+  </class>
+</hibernate-mapping>

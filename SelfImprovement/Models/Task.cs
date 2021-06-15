@@ -6,6 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Web.Mvc;
+using NHibernate.Linq;
+using NHibernate;
 
 namespace SelfImprovement.Models
 {
@@ -13,13 +16,13 @@ namespace SelfImprovement.Models
     {
         public bool TaskComplete;
 
+        public int ConsecutiveDays;
+
         private readonly string Name;
 
         private readonly Button TaskButton;
 
         private readonly Label TaskLabel;
-
-        private readonly string AppConfigValue;
 
         public Task(string name, Button taskButton, Label taskLabel)
         {
@@ -27,19 +30,63 @@ namespace SelfImprovement.Models
             this.TaskButton = taskButton;
             this.TaskLabel = taskLabel;
             this.TaskComplete = false;
+            this.ConsecutiveDays = 0;
 
-            if (this.Name.Contains(" "))
+            using (ISession session = NHibernateSession.OpenSession())
             {
-                this.AppConfigValue = "ConsecutiveDays" + this.Name.Replace(" ", "");
-            }
-            else
-            {
-                this.AppConfigValue = "ConsecutiveDays" + this.Name;
-            }
+                var existingTask = session.Query<Task>(this.Name);
 
-            CreateAppConfigEntry();
+                if (existingTask != null)
+                {
+                    // create new task entry
+                    this.Create();
+                }
+            }
 
             this.GetConsecutiveDaysTaskCompleteBaseline();
+        }
+
+        [HttpPost]
+        private void Create()
+        {
+            using (ISession session = NHibernateSession.OpenSession())
+            {
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    session.Save(this);
+                    transaction.Commit();
+                }
+            }
+        }
+
+        [HttpPost]
+        private void Edit()
+        {
+            using (ISession session = NHibernateSession.OpenSession())
+            {
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    var taskUpdateObj = session.Get<Task>(this.Name);
+                    taskUpdateObj.TaskComplete = this.TaskComplete;
+                    taskUpdateObj.ConsecutiveDays = this.ConsecutiveDays;
+
+                    session.Save(this);
+                    transaction.Commit();
+                }
+            }
+        }
+
+        [HttpPost]
+        private void Delete()
+        {
+            using (ISession session = NHibernateSession.OpenSession())
+            {
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    session.Delete(this);
+                    transaction.Commit();
+                }
+            }
         }
 
         public void CompleteTask()
@@ -73,8 +120,9 @@ namespace SelfImprovement.Models
 
         public int GetConsecutiveTaskComplete()
         {
-            var consTaskComplete = ConfigurationManager.AppSettings.Get(this.AppConfigValue);
-            return Int32.Parse(consTaskComplete);
+            //var consTaskComplete = ConfigurationManager.AppSettings.Get(this.AppConfigValue);
+            //return Int32.Parse(consTaskComplete);
+            return 0;
         }
 
         public void IncrementConsecutiveDayTaskComplete()
@@ -82,38 +130,9 @@ namespace SelfImprovement.Models
             var consTaskComplete = GetConsecutiveTaskComplete();
             consTaskComplete++;
 
-            this.UpdateAppConfigEntry(consTaskComplete);
+            //this.UpdateAppConfigEntry(consTaskComplete);
 
             this.TaskLabel.Text = string.Format("Consecutive days {0}: {1}", this.Name, consTaskComplete);
-        }
-
-        private void UpdateAppConfigEntry(int consecutiveDays)
-        {
-            // Update the value in the config.. not a great place/way to store but works for now
-            Console.WriteLine("Incremented {0} to {1}. Updating app.config value.", this.Name, consecutiveDays);
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings[this.AppConfigValue].Value = consecutiveDays.ToString();
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
-        }
-
-        private void CreateAppConfigEntry()
-        {
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
-            try
-            {
-                var val = config.AppSettings.Settings[this.AppConfigValue].Value;
-                Console.WriteLine("{0} app.config entry already exists.", this.AppConfigValue);
-            }
-            catch (NullReferenceException ex)
-            {
-                Console.WriteLine("Exception: {0}", ex.Message);
-                Console.WriteLine("Creating {0} app.config entry.", this.AppConfigValue);
-                config.AppSettings.Settings.Add(this.AppConfigValue, "0");
-                config.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection("appSettings");
-            }
         }
     }
 }

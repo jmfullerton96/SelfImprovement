@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-configuration xmlns="urn:nhibernate-configuration-2.2">
+  <session-factory>
+    <property name="connection.provider">
+      NHibernate.Connection.DriverConnectionProvider
+    </property>
+    <property name="connection.driver_class">
+      NHibernate.Driver.SqlClientDriver
+    </property>
+    <!--Change connection string according to your SQL Server configuration here.-->
+    <property name="connection.connection_string">
+      Server=DESKTOP-1N4HOQD\SQLEXPRESS;database=SelfImprovement;Integrated Security=true;
+    </property>
+    <property name="dialect">
+      NHibernate.Dialect.MsSql2012Dialect
+    </property>
+  </session-factory>
+</hibernate-configuration>
