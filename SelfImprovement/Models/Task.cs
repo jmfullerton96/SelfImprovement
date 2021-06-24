@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -13,33 +14,35 @@ namespace SelfImprovement.Models
     {
         public bool TaskComplete;
 
+        public int ConsecutiveDays;
+
         private readonly string Name;
 
         private readonly Button TaskButton;
 
         private readonly Label TaskLabel;
 
-        private readonly string AppConfigValue;
-
         public Task(string name, Button taskButton, Label taskLabel)
         {
             this.Name = name;
             this.TaskButton = taskButton;
             this.TaskLabel = taskLabel;
-            this.TaskComplete = false;
 
-            if (this.Name.Contains(" "))
+            if (!this.TaskExists())
             {
-                this.AppConfigValue = "ConsecutiveDays" + this.Name.Replace(" ", "");
+                this.TaskComplete = false;
+                this.ConsecutiveDays = 0;
+                this.CreateTask();
             }
             else
             {
-                this.AppConfigValue = "ConsecutiveDays" + this.Name;
+                if (this.TaskComplete)
+                {
+                    this.TaskButton.BackColor = Color.Green;
+                }
+
+                SetLabelText();
             }
-
-            CreateAppConfigEntry();
-
-            this.GetConsecutiveDaysTaskCompleteBaseline();
         }
 
         public void CompleteTask()
@@ -66,54 +69,77 @@ namespace SelfImprovement.Models
             MessageBox.Show("It's a new day, resetting work out task!");
         }
 
-        public void GetConsecutiveDaysTaskCompleteBaseline()
+        private void SetLabelText()
         {
-            this.TaskLabel.Text = string.Format("Consecutive days {0}: {1}", this.Name, this.GetConsecutiveTaskComplete());
+            this.TaskLabel.Text = string.Format("Consecutive days {0}: {1}", this.Name, this.ConsecutiveDays);
         }
 
-        public int GetConsecutiveTaskComplete()
+        private void IncrementConsecutiveDayTaskComplete()
         {
-            var consTaskComplete = ConfigurationManager.AppSettings.Get(this.AppConfigValue);
-            return Int32.Parse(consTaskComplete);
-        }
+            var bridge = new SqlBridge();
+            var connection = bridge.GetConnection();
 
-        public void IncrementConsecutiveDayTaskComplete()
-        {
-            var consTaskComplete = GetConsecutiveTaskComplete();
-            consTaskComplete++;
+            var sql = string.Format("EXEC Complete_Task N'{0}'", this.Name);
 
-            this.UpdateAppConfigEntry(consTaskComplete);
+            var command = new SqlCommand(sql, connection);
 
-            this.TaskLabel.Text = string.Format("Consecutive days {0}: {1}", this.Name, consTaskComplete);
-        }
+            var dataReader = command.ExecuteReader();
 
-        private void UpdateAppConfigEntry(int consecutiveDays)
-        {
-            // Update the value in the config.. not a great place/way to store but works for now
-            Console.WriteLine("Incremented {0} to {1}. Updating app.config value.", this.Name, consecutiveDays);
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings[this.AppConfigValue].Value = consecutiveDays.ToString();
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
-        }
-
-        private void CreateAppConfigEntry()
-        {
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
-            try
+            while (dataReader.Read())
             {
-                var val = config.AppSettings.Settings[this.AppConfigValue].Value;
-                Console.WriteLine("{0} app.config entry already exists.", this.AppConfigValue);
+                this.ConsecutiveDays = dataReader.GetInt32(0);
             }
-            catch (NullReferenceException ex)
+
+
+            dataReader.Close();
+            command.Dispose();
+
+            SetLabelText();
+        }
+
+        private bool TaskExists()
+        {
+            bool result = false;
+            string nameRetrieved = string.Empty;
+
+            var bridge = new SqlBridge();
+            var connection = bridge.GetConnection();
+
+            var sql = string.Format("SELECT TaskComplete, ConsecutiveDays FROM Tasks WHERE Name=N'{0}'", this.Name);
+
+            var command = new SqlCommand(sql, connection);
+
+            var dataReader = command.ExecuteReader();
+
+            if (dataReader.HasRows)
             {
-                Console.WriteLine("Exception: {0}", ex.Message);
-                Console.WriteLine("Creating {0} app.config entry.", this.AppConfigValue);
-                config.AppSettings.Settings.Add(this.AppConfigValue, "0");
-                config.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection("appSettings");
+                while (dataReader.Read())
+                {
+                    this.TaskComplete = dataReader.GetBoolean(0);
+                    this.ConsecutiveDays = dataReader.GetInt32(1);
+                }
+
+                result = true;
             }
+            
+            dataReader.Close();
+            command.Dispose();
+
+            return result;
+        }
+
+        private void CreateTask()
+        {
+            var bridge = new SqlBridge();
+            var connection = bridge.GetConnection();
+
+            var sql = string.Format("EXEC Insert_New_Task N'{0}', {1}, N'{2}', N'{3}', {4}", this.Name, this.TaskComplete, this.TaskButton.Name, this.TaskLabel.Name, this.ConsecutiveDays);
+
+            var command = new SqlCommand(sql, connection);
+
+            command.ExecuteReader();
+
+            command.Dispose();
         }
     }
 }

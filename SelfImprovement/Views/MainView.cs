@@ -63,8 +63,6 @@ namespace SelfImprovement
         private void MainView_Load(object sender, EventArgs e)
         {
             this.SetTimeLeftInDay(this.GetTimeLeftInDay()); // Set time left in the day, needs to be updated to a countdown
-            this.WorkOut.TaskComplete = false;
-            this.Study.TaskComplete = false;
         }
         #endregion EventHandlers
 
