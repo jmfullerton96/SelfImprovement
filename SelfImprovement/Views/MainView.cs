@@ -49,15 +49,24 @@ namespace SelfImprovement
 
             if (timeLeftInDay.Equals("24:00"))
             {
-                // Reset the completed tasks when time left in day is 24 hours, if both are flase don't bother checking TimeLeftInDay
-                if (this.WorkOut.TaskComplete == true)
+                // Reset the completed tasks when time left in day is 24 hours, if false reset consecutive days to 0
+                if (this.WorkOut.TaskComplete)
                 {
                     this.WorkOut.ResetTask();
                 }
-                if (this.Study.TaskComplete == true)
+                else if (!this.WorkOut.TaskComplete)
+                {
+                    this.WorkOut.ResetConsecutiveDays();
+                }
+
+                if (this.Study.TaskComplete)
                 {
                     this.Study.ResetTask();
-                }                
+                }    
+                else if (!this.Study.TaskComplete)
+                {
+                    this.Study.ResetConsecutiveDays();
+                }
             }
 
             this.SetTimeLeftInDay(timeLeftInDay);

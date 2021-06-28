@@ -68,13 +68,37 @@ namespace SelfImprovement.Models
             this.TaskComplete = false;
             this.TaskButton.BackColor = Color.Red;
 
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                connection.Open();
+
+                var sqlCmd = new SqlCommand(string.Format("Update Tasks SET TaskComplete = @TaskComplete WHERE Name = @Name"), connection);
+                sqlCmd.Parameters.AddWithValue("@TaskComplete", this.TaskComplete);
+                sqlCmd.Parameters.AddWithValue("@Name", this.Name);
+
+                sqlCmd.ExecuteReader();
+            }
+
             Console.WriteLine("It's a new day, resetting work out task!");
             MessageBox.Show("It's a new day, resetting work out task!");
         }
 
-        private void SetLabelText()
+        public void ResetConsecutiveDays()
         {
-            this.TaskLabel.Text = string.Format("Consecutive days {0}: {1}", this.Name, this.ConsecutiveDays);
+            this.ConsecutiveDays = 0;
+
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                connection.Open();
+
+                var sqlCmd = new SqlCommand(string.Format("Update Tasks SET ConsecutiveDays = @ConsecutiveDays WHERE Name = @Name"), connection);
+                sqlCmd.Parameters.AddWithValue("@ConsecutiveDays", this.ConsecutiveDays);
+                sqlCmd.Parameters.AddWithValue("@Name", this.Name);
+
+                sqlCmd.ExecuteReader();
+            }
+
+            Console.WriteLine("You missed {0} today.. resetting consecutive days back to 0.", this.Name);
         }
 
         private void IncrementConsecutiveDayTaskComplete()
@@ -83,7 +107,8 @@ namespace SelfImprovement.Models
             {
                 connection.Open();
 
-                var sqlCmd = new SqlCommand(string.Format("EXEC Complete_Task N'{0}'", this.Name), connection);
+                var sqlCmd = new SqlCommand(string.Format("EXEC Complete_Task @Name"), connection);
+                sqlCmd.Parameters.AddWithValue("@Name", this.Name);
 
                 var dataReader = sqlCmd.ExecuteReader();
 
@@ -105,7 +130,8 @@ namespace SelfImprovement.Models
             {
                 connection.Open();
 
-                var sqlCmd = new SqlCommand(string.Format("SELECT TaskComplete, ConsecutiveDays FROM Tasks WHERE Name=N'{0}'", this.Name), connection);
+                var sqlCmd = new SqlCommand(string.Format("SELECT TaskComplete, ConsecutiveDays FROM Tasks WHERE Name = @Name"), connection);
+                sqlCmd.Parameters.AddWithValue("@Name", this.Name);
 
                 var dataReader = sqlCmd.ExecuteReader();
 
@@ -130,10 +156,20 @@ namespace SelfImprovement.Models
             {
                 connection.Open();
 
-                var sqlCmd = new SqlCommand(string.Format("EXEC Insert_New_Task N'{0}', {1}, N'{2}', N'{3}', {4}", this.Name, this.TaskComplete, this.TaskButton.Name, this.TaskLabel.Name, this.ConsecutiveDays), connection);
-
+                var sqlCmd = new SqlCommand(string.Format("EXEC Insert_New_Task @Name, @TaskComplete, @TaskButton, @TaskLabel, @ConsecutiveDays"), connection);
+                sqlCmd.Parameters.AddWithValue("@Name", this.Name);
+                sqlCmd.Parameters.AddWithValue("@TaskComplete", this.TaskComplete);
+                sqlCmd.Parameters.AddWithValue("@TaskButton", this.TaskButton.Name);
+                sqlCmd.Parameters.AddWithValue("@TaskLabel", this.TaskLabel.Name);
+                sqlCmd.Parameters.AddWithValue("@ConsecutiveDays", this.ConsecutiveDays);
+                
                 sqlCmd.ExecuteReader();
             }
+        }
+
+        private void SetLabelText()
+        {
+            this.TaskLabel.Text = string.Format("Consecutive days {0}: {1}", this.Name, this.ConsecutiveDays);
         }
     }
 }
