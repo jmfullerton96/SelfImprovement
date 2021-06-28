@@ -22,11 +22,14 @@ namespace SelfImprovement.Models
 
         private readonly Label TaskLabel;
 
-        public Task(string name, Button taskButton, Label taskLabel)
+        private readonly string ConnectionString;
+
+        public Task(string name, Button taskButton, Label taskLabel, string connectionString)
         {
             this.Name = name;
             this.TaskButton = taskButton;
             this.TaskLabel = taskLabel;
+            this.ConnectionString = connectionString;
 
             if (!this.TaskExists())
             {
@@ -76,23 +79,19 @@ namespace SelfImprovement.Models
 
         private void IncrementConsecutiveDayTaskComplete()
         {
-            var bridge = new SqlBridge();
-            var connection = bridge.GetConnection();
-
-            var sql = string.Format("EXEC Complete_Task N'{0}'", this.Name);
-
-            var command = new SqlCommand(sql, connection);
-
-            var dataReader = command.ExecuteReader();
-
-            while (dataReader.Read())
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-                this.ConsecutiveDays = dataReader.GetInt32(0);
+                connection.Open();
+
+                var sqlCmd = new SqlCommand(string.Format("EXEC Complete_Task N'{0}'", this.Name), connection);
+
+                var dataReader = sqlCmd.ExecuteReader();
+
+                while (dataReader.Read())
+                {
+                    this.ConsecutiveDays = dataReader.GetInt32(0);
+                }
             }
-
-
-            dataReader.Close();
-            command.Dispose();
 
             SetLabelText();
         }
@@ -102,44 +101,39 @@ namespace SelfImprovement.Models
             bool result = false;
             string nameRetrieved = string.Empty;
 
-            var bridge = new SqlBridge();
-            var connection = bridge.GetConnection();
-
-            var sql = string.Format("SELECT TaskComplete, ConsecutiveDays FROM Tasks WHERE Name=N'{0}'", this.Name);
-
-            var command = new SqlCommand(sql, connection);
-
-            var dataReader = command.ExecuteReader();
-
-            if (dataReader.HasRows)
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-                while (dataReader.Read())
-                {
-                    this.TaskComplete = dataReader.GetBoolean(0);
-                    this.ConsecutiveDays = dataReader.GetInt32(1);
-                }
+                connection.Open();
 
-                result = true;
+                var sqlCmd = new SqlCommand(string.Format("SELECT TaskComplete, ConsecutiveDays FROM Tasks WHERE Name=N'{0}'", this.Name), connection);
+
+                var dataReader = sqlCmd.ExecuteReader();
+
+                if (dataReader.HasRows)
+                {
+                    while (dataReader.Read())
+                    {
+                        this.TaskComplete = dataReader.GetBoolean(0);
+                        this.ConsecutiveDays = dataReader.GetInt32(1);
+                    }
+
+                    result = true;
+                }
             }
-            
-            dataReader.Close();
-            command.Dispose();
 
             return result;
         }
 
         private void CreateTask()
         {
-            var bridge = new SqlBridge();
-            var connection = bridge.GetConnection();
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                connection.Open();
 
-            var sql = string.Format("EXEC Insert_New_Task N'{0}', {1}, N'{2}', N'{3}', {4}", this.Name, this.TaskComplete, this.TaskButton.Name, this.TaskLabel.Name, this.ConsecutiveDays);
+                var sqlCmd = new SqlCommand(string.Format("EXEC Insert_New_Task N'{0}', {1}, N'{2}', N'{3}', {4}", this.Name, this.TaskComplete, this.TaskButton.Name, this.TaskLabel.Name, this.ConsecutiveDays), connection);
 
-            var command = new SqlCommand(sql, connection);
-
-            command.ExecuteReader();
-
-            command.Dispose();
+                sqlCmd.ExecuteReader();
+            }
         }
     }
 }

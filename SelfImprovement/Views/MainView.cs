@@ -25,8 +25,11 @@ namespace SelfImprovement
         public MainView()
         {
             InitializeComponent();
-            this.WorkOut = new Models.Task("Work Out", this.WorkOutBtn, this.label4);
-            this.Study = new Models.Task("Study", this.StudyBtn, this.label5);
+
+            string connetionString = ConfigurationManager.ConnectionStrings["SelfImprovement.Properties.Settings.SelfImprovementConnectionString"].ConnectionString;
+
+            this.WorkOut = new Models.Task("Work Out", this.WorkOutBtn, this.label4, connetionString);
+            this.Study = new Models.Task("Study", this.StudyBtn, this.label5, connetionString);
         }
 
         #region EventHandlers
