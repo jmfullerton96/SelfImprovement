@@ -30,6 +30,8 @@ namespace SelfImprovement
 
             this.WorkOut = new Models.Task("Work Out", this.WorkOutBtn, this.label4, connetionString);
             this.Study = new Models.Task("Study", this.StudyBtn, this.label5, connetionString);
+
+            this.backgroundWorker1.RunWorkerAsync(1000);
         }
 
         #region EventHandlers
@@ -43,33 +45,11 @@ namespace SelfImprovement
             this.Study.CompleteTask();
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private void backgroundWorker1_Timer_Tick(object sender, EventArgs e)
         {
-            var timeLeftInDay = this.GetTimeLeftInDay();
+            BackgroundWorker bw = sender as BackgroundWorker;
 
-            if (timeLeftInDay.Equals("24:00"))
-            {
-                // Reset the completed tasks when time left in day is 24 hours, if false reset consecutive days to 0
-                if (this.WorkOut.TaskComplete)
-                {
-                    this.WorkOut.ResetTask();
-                }
-                else if (!this.WorkOut.TaskComplete)
-                {
-                    this.WorkOut.ResetConsecutiveDays();
-                }
-
-                if (this.Study.TaskComplete)
-                {
-                    this.Study.ResetTask();
-                }    
-                else if (!this.Study.TaskComplete)
-                {
-                    this.Study.ResetConsecutiveDays();
-                }
-            }
-
-            this.SetTimeLeftInDay(timeLeftInDay);
+            this.TimerTick(bw);
         }
 
         private void MainView_Load(object sender, EventArgs e)
@@ -80,6 +60,46 @@ namespace SelfImprovement
 
         #region Helper Functions
         #region Time Left in Day Functions
+        private void TimerTick(BackgroundWorker bw)
+        {
+            while(!bw.CancellationPending) {
+                this.Invoke(new MethodInvoker(delegate()
+                {
+                    Console.WriteLine("Timer ticking...");
+
+                    //Thread.Sleep(1000);
+
+                    var timeLeftInDay = this.GetTimeLeftInDay();
+
+                    if (timeLeftInDay.Equals("24:00"))
+                    {
+                        Console.WriteLine("24 hours left in the day.. It's a new day!");
+
+                        // Reset the completed tasks when time left in day is 24 hours, if false reset consecutive days to 0
+                        if (!this.WorkOut.TaskComplete)
+                        {
+                            this.WorkOut.ResetConsecutiveDays();
+                        }
+                        else if (this.WorkOut.TaskComplete)
+                        {
+                            this.WorkOut.ResetTask();
+                        }
+
+                        if (!this.Study.TaskComplete)
+                        {
+                            this.Study.ResetConsecutiveDays();
+                        }
+                        else if (this.Study.TaskComplete)
+                        {
+                            this.Study.ResetTask();
+                        }
+                    }
+                
+                    this.SetTimeLeftInDay(timeLeftInDay);
+                }));
+            }
+        }
+
         private string GetTimeLeftInDay()
         {
             var timeLeft = string.Empty;

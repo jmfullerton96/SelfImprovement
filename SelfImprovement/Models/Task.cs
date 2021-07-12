@@ -16,6 +16,8 @@ namespace SelfImprovement.Models
 
         public int ConsecutiveDays;
 
+        public DateTime LastDayCompleted;
+
         private readonly string Name;
 
         private readonly Button TaskButton;
@@ -44,7 +46,7 @@ namespace SelfImprovement.Models
                     this.TaskButton.BackColor = Color.Green;
                 }
 
-                SetLabelText();
+                this.SetLabelText();
             }
         }
 
@@ -98,6 +100,8 @@ namespace SelfImprovement.Models
                 sqlCmd.ExecuteReader();
             }
 
+            this.SetLabelText();
+
             Console.WriteLine("You missed {0} today.. resetting consecutive days back to 0.", this.Name);
         }
 
@@ -118,7 +122,7 @@ namespace SelfImprovement.Models
                 }
             }
 
-            SetLabelText();
+            this.SetLabelText();
         }
 
         private bool TaskExists()

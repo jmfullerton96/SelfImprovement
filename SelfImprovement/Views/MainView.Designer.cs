@@ -40,6 +40,7 @@ namespace SelfImprovement
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // WorkOutBtn
@@ -86,7 +87,6 @@ namespace SelfImprovement
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(229, 24);
             this.label2.TabIndex = 1;
-            this.WorkOutBtn.TabStop = false;
             this.label2.Text = "Time left in the day: foofoo";
             // 
             // label3
@@ -97,35 +97,37 @@ namespace SelfImprovement
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(509, 24);
             this.label3.TabIndex = 0;
-            this.WorkOutBtn.TabStop = false;
             this.label3.Text = "\"We didn\'t come this far just to come this far.\" - The Situation";
             // 
             // timer
             // 
-            this.timer.Enabled = true;
+            this.timer.Enabled = true; // TODO - with backgroundWorker in use - timer is likely not needed
             this.timer.Interval = 1000;
-            this.timer.Tick += new System.EventHandler(this.Timer_Tick);
+            //this.timer.Tick += new System.EventHandler(this.Timer_Tick);
             // 
-            // label4 - Consecutive days working out
+            // label4
             // 
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(287, 231);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(155, 13);
+            this.label4.Size = new System.Drawing.Size(161, 13);
             this.label4.TabIndex = 5;
-            this.WorkOutBtn.TabStop = false;
             this.label4.Text = "Consecutive days working out: 0";
             // 
-            // label5 - Consecutive days studying
+            // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(296, 335);
+            this.label5.Location = new System.Drawing.Point(290, 335);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(142, 13);
+            this.label5.Size = new System.Drawing.Size(145, 13);
             this.label5.TabIndex = 6;
-            this.WorkOutBtn.TabStop = false;
             this.label5.Text = "Consecutive days studying: 0";
             // 
+            // backgroundWorker1
+            // 
+            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_Timer_Tick);
+            // No RunWorkerCompleted needed b/c it will run continuously
+            //
             // MainView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -156,6 +158,7 @@ namespace SelfImprovement
         private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
 
