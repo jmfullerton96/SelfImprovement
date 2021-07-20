@@ -45,29 +45,11 @@ namespace SelfImprovement
 
         private void Timer_Tick(object sender, EventArgs e)
         {
+            var today = DateTime.Now.Date;
+            ResetTask(this.WorkOut, today);
+            ResetTask(this.Study, today);
+
             var timeLeftInDay = this.GetTimeLeftInDay();
-
-            if (timeLeftInDay.Equals("24:00"))
-            {
-                // Reset the completed tasks when time left in day is 24 hours, if false reset consecutive days to 0
-                if (this.WorkOut.TaskComplete)
-                {
-                    this.WorkOut.ResetTask();
-                }
-                else if (!this.WorkOut.TaskComplete)
-                {
-                    this.WorkOut.ResetConsecutiveDays();
-                }
-
-                if (this.Study.TaskComplete)
-                {
-                    this.Study.ResetTask();
-                }    
-                else if (!this.Study.TaskComplete)
-                {
-                    this.Study.ResetConsecutiveDays();
-                }
-            }
 
             this.SetTimeLeftInDay(timeLeftInDay);
         }
@@ -79,6 +61,32 @@ namespace SelfImprovement
         #endregion EventHandlers
 
         #region Helper Functions
+
+        private void ResetTask(Models.Task task, DateTime date)
+        {
+            if (!task.LastDayCompleted.Date.Equals(date) && !task.LastDayCompleted.Date.Equals(task.DefaultLastDayCompleted.Date)) // revert to ! (not)
+            {
+                var yesterday = DateTime.Now.AddDays(-1).Date;
+                
+                if (task.TaskComplete)
+                {
+                    Console.WriteLine("TaskComplete: {0}", task.TaskComplete);
+                    Console.WriteLine("LastDayCompleted.Date: {0}", task.LastDayCompleted.Date);
+                    Console.WriteLine("Yesterday: {0}", yesterday);
+                    task.ResetTask();
+                }
+                else if (!task.TaskComplete && !task.LastDayCompleted.Date.Equals(yesterday)) // if taskComplete == false && LastDayCompleted != yesterday - second comparison was broken. shoudl work now b/c .date wasn't on yesterday
+                {
+                    // overnight test got in here. It should've only executed the if condition
+                    Console.WriteLine("TaskComplete: {0}", task.TaskComplete);
+                    Console.WriteLine("LastDayCompleted.Date: {0}", task.LastDayCompleted.Date);
+                    Console.WriteLine("Yesterday: {0}", yesterday);
+                    task.ResetConsecutiveDays();
+                }
+            }
+
+        }
+
         #region Time Left in Day Functions
         private string GetTimeLeftInDay()
         {
@@ -98,7 +106,7 @@ namespace SelfImprovement
             {
                 timeLeft = string.Format("{0}:{1}", hoursLeft, minutesLeft);
             }
-
+            
             return timeLeft;
         }
 

@@ -7,7 +7,7 @@ GO
 CREATE TABLE [dbo].[Tasks]
 (
 	Name VARCHAR(100),
-	TaskComplete BIT, /*BIT stores boolean values as 1, 0, 0r NULL for TRUE, FALSE, and NULL respectively*/
+	LastDayCompleted DATE,--FORMAT(DATE, 'mm/dd/yyyy') /*BIT stores boolean values as 1, 0, 0r NULL for TRUE, FALSE, and NULL respectively*/
 	TaskButton VARCHAR(100),
 	TaskLabel VARCHAR(100),
 	ConsecutiveDays INT

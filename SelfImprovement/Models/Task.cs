@@ -16,6 +16,10 @@ namespace SelfImprovement.Models
 
         public int ConsecutiveDays;
 
+        public DateTime LastDayCompleted;
+
+        public readonly DateTime DefaultLastDayCompleted = new DateTime(1996, 11, 18);
+
         private readonly string Name;
 
         private readonly Button TaskButton;
@@ -35,6 +39,7 @@ namespace SelfImprovement.Models
             {
                 this.TaskComplete = false;
                 this.ConsecutiveDays = 0;
+                this.LastDayCompleted = this.DefaultLastDayCompleted;
                 this.CreateTask();
             }
             else
@@ -54,7 +59,8 @@ namespace SelfImprovement.Models
             {
                 this.TaskComplete = true;
                 this.TaskButton.BackColor = Color.Green;
-                this.IncrementConsecutiveDayTaskComplete();
+                this.LastDayCompleted = DateTime.Now.Date;
+                this.CompleteTaskDB();
                 Console.WriteLine("Congratulations, you bettered yourself with time spent on {0} today!", this.Name);
             }
             else
@@ -68,40 +74,47 @@ namespace SelfImprovement.Models
             this.TaskComplete = false;
             this.TaskButton.BackColor = Color.Red;
 
-            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
-            {
-                connection.Open();
-
-                var sqlCmd = new SqlCommand(string.Format("Update Tasks SET TaskComplete = @TaskComplete WHERE Name = @Name"), connection);
-                sqlCmd.Parameters.AddWithValue("@TaskComplete", this.TaskComplete);
-                sqlCmd.Parameters.AddWithValue("@Name", this.Name);
-
-                sqlCmd.ExecuteReader();
-            }
-
             Console.WriteLine("It's a new day, resetting work out task!");
-            MessageBox.Show("It's a new day, resetting work out task!");
         }
 
         public void ResetConsecutiveDays()
         {
+            // General reset then take care of the ConsecutiveDays
+            this.ResetTask();
+
             this.ConsecutiveDays = 0;
+            this.LastDayCompleted = this.DefaultLastDayCompleted;
 
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
                 connection.Open();
 
-                var sqlCmd = new SqlCommand(string.Format("Update Tasks SET ConsecutiveDays = @ConsecutiveDays WHERE Name = @Name"), connection);
+                var sqlCmd = new SqlCommand(string.Format("Update Tasks SET ConsecutiveDays = @ConsecutiveDays, LastDayCompleted = @LastDayCompleted WHERE Name = @Name"), connection);
                 sqlCmd.Parameters.AddWithValue("@ConsecutiveDays", this.ConsecutiveDays);
+                sqlCmd.Parameters.AddWithValue("@LastDayCompleted", this.LastDayCompleted);
                 sqlCmd.Parameters.AddWithValue("@Name", this.Name);
 
                 sqlCmd.ExecuteReader();
             }
 
+            this.SetLabelText();
+
             Console.WriteLine("You missed {0} today.. resetting consecutive days back to 0.", this.Name);
         }
 
-        private void IncrementConsecutiveDayTaskComplete()
+        private void SetTaskComplete()
+        {
+            if (this.LastDayCompleted.Date.Equals(DateTime.Now.Date))
+            {
+                this.TaskComplete = true;
+            }
+            else
+            {
+                this.TaskComplete = false;
+            }
+        }
+
+        private void CompleteTaskDB()
         {
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
@@ -118,7 +131,7 @@ namespace SelfImprovement.Models
                 }
             }
 
-            SetLabelText();
+            this.SetLabelText();
         }
 
         private bool TaskExists()
@@ -130,7 +143,7 @@ namespace SelfImprovement.Models
             {
                 connection.Open();
 
-                var sqlCmd = new SqlCommand(string.Format("SELECT TaskComplete, ConsecutiveDays FROM Tasks WHERE Name = @Name"), connection);
+                var sqlCmd = new SqlCommand(string.Format("SELECT LastDayCompleted, ConsecutiveDays FROM Tasks WHERE Name = @Name"), connection);
                 sqlCmd.Parameters.AddWithValue("@Name", this.Name);
 
                 var dataReader = sqlCmd.ExecuteReader();
@@ -139,9 +152,11 @@ namespace SelfImprovement.Models
                 {
                     while (dataReader.Read())
                     {
-                        this.TaskComplete = dataReader.GetBoolean(0);
+                        this.LastDayCompleted = dataReader.GetDateTime(0);
                         this.ConsecutiveDays = dataReader.GetInt32(1);
                     }
+
+                    this.SetTaskComplete();
 
                     result = true;
                 }
@@ -156,9 +171,9 @@ namespace SelfImprovement.Models
             {
                 connection.Open();
 
-                var sqlCmd = new SqlCommand(string.Format("EXEC Insert_New_Task @Name, @TaskComplete, @TaskButton, @TaskLabel, @ConsecutiveDays"), connection);
+                var sqlCmd = new SqlCommand(string.Format("EXEC Insert_New_Task @Name, @LastDayCompleted, @TaskButton, @TaskLabel, @ConsecutiveDays"), connection);
                 sqlCmd.Parameters.AddWithValue("@Name", this.Name);
-                sqlCmd.Parameters.AddWithValue("@TaskComplete", this.TaskComplete);
+                sqlCmd.Parameters.AddWithValue("@LastDayCompleted", this.LastDayCompleted.Date);
                 sqlCmd.Parameters.AddWithValue("@TaskButton", this.TaskButton.Name);
                 sqlCmd.Parameters.AddWithValue("@TaskLabel", this.TaskLabel.Name);
                 sqlCmd.Parameters.AddWithValue("@ConsecutiveDays", this.ConsecutiveDays);
